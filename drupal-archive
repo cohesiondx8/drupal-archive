@@ -1,7 +1,18 @@
 #!/usr/bin/env php
 <?php
 
-require __DIR__.'/vendor/autoload.php';
+// We might be running this binary from composer global
+if (
+    !file_exists($autoload = __DIR__.'/vendor/autoload.php') &&
+    !file_exists($autoload = __DIR__.'/../autoload.php') &&
+    !file_exists($autoload = __DIR__.'/../../autoload.php') &&
+    !file_exists($autoload = __DIR__.'/../../../autoload.php')
+) {
+    echo "Could not find the composer autoloader!\n";
+    exit(1);
+}
+
+require_once $autoload;
 
 use Symfony\Component\Console\Application;
 use CohesionDrupalArchive\Command\{DumpCommand, RestoreCommand};
