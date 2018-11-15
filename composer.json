@@ -6,7 +6,7 @@
         "symfony/console": "^4.1",
         "symfony/process": "^4.1"
     },
-    "bin": ["bin/drupal-archive"],
+    "bin": ["drupal-archive"],
     "autoload": {
         "psr-4": {"CohesionDrupalArchive\\": "src/"}
     }
