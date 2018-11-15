@@ -1,0 +1,14 @@
+#!/usr/bin/env php
+<?php
+
+require __DIR__.'/vendor/autoload.php';
+
+use Symfony\Component\Console\Application;
+use CohesionDrupalArchive\Command\{DumpCommand, RestoreCommand};
+
+$application = new Application('CohesionDX Drupal-Archive Helper');
+
+$application->add(new DumpCommand());
+$application->add(new RestoreCommand());
+
+$application->run();

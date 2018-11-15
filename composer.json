@@ -1,0 +1,12 @@
+{
+    "name": "cohesiondx8/drupal-archive",
+    "description": "Console helper to archive/restore drupal websites.",
+    "license": "MIT",
+    "require": {
+        "symfony/console": "^4.1",
+        "symfony/process": "^4.1"
+    },
+    "autoload": {
+        "psr-4": {"CohesionDrupalArchive\\": "src/"}
+    }
+}
