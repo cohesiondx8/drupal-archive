@@ -10,9 +10,9 @@ class DumpCommand extends AbstractCommand
     protected function configure()
     {
         $this->setName('cda:dump')
-            ->setDescription('Creates an archive of your drupal website.')
-            ->addArgument('source', InputArgument::REQUIRED, 'Path to your drupal root folder')
-            ->addArgument('destination', InputArgument::REQUIRED, 'Where the archive should end up')
+            ->setDescription('Creates an archive (tar\'ed and gzip\'ed) of your drupal website.')
+            ->addArgument('source', InputArgument::REQUIRED, 'Path to your drupal root folder. ex: /var/www/html')
+            ->addArgument('destination', InputArgument::REQUIRED, 'Where the archive should end up. ex: /tmp/backup.tar.gz')
             ->addOption('overwrite', null, InputOption::VALUE_OPTIONAL, 'Overwrite the archive?', "true")
             ->addOption('use-drush', null, InputOption::VALUE_OPTIONAL, 'Whether you want to use drush or not', "true")
         ;
@@ -26,7 +26,8 @@ class DumpCommand extends AbstractCommand
         $overwrite      = false;
         $useDrush       = false;
         $finalName      = basename($destination);
-        $destFolder     = dirname($destination);
+        $destFolder     = realpath(dirname($destination));
+        $destination    = ('/' === substr($destFolder, -1) ? $destFolder : $destFolder.'/').$finalName;
 
         if (in_array($input->getOption('overwrite'), ['y', '1', 'true', 'yes'])) {
             $overwrite = true;
@@ -43,22 +44,9 @@ class DumpCommand extends AbstractCommand
 
         if ($useDrush) {
 
-            // Find the drush version - we can use drush archive-dump up to drush 8.1.17
-            try {
-                $command = 'drush --version';
-                $drushVersion = $this->runCommand($command);
-            } catch (\Exception $exc) {
-                return $this->output->writeln(sprintf("<error>The command '%s' failed!\n\n%s</error>", $command, $exc->getMessage()));
-            }
-
-            preg_match('`[7-9]\.[0-9]+\.[0-9]+`', $drushVersion, $versionFound);
-
-            if (empty($versionFound[0])) {
-                return $this->output->writeln("<error>Could not find your drush version...</error>");
-            }
-
-            if ($versionFound[0] > "8.1.17") {
-                return $this->output->writeln(sprintf("<error>Your drush is too new and does not have drush archive-dump (needs to be 8.1.17 or lower and you have %s)</error>", $versionFound[0]));
+            // Make sure we are running an old version of drush
+            if (!$this->checkRunnableDrush()) {
+                return;
             }
 
             $command = sprintf('cd %s && drush archive-dump --destination=%s ', $source, $destination);
@@ -82,19 +70,24 @@ class DumpCommand extends AbstractCommand
 
         // Create database dump
         $sqlDump = 'database_'.date('U').'.sql';
+        $port = '';
+        if (!empty($database['port'])) {
+            $port = sprintf('--port=%s', $database['port']);
+        }
         $command = sprintf(
-            'mysqldump --user=%s --password=%s --host=%s --port=%s --databases %s > /tmp/%s',
+            'mysqldump --user=%s --password=%s --host=%s %s --databases %s > /tmp/%s',
             $database['username'],
             $database['password'],
             $database['host'],
-            $database['port'],
+            $port,
             $database['database'],
             $sqlDump
         );
         $this->runCommand($command);
 
-        $docroot = dirname($source);
-        $folderToCompress = basename($source);
+        $docroot = realpath($source.'/..');
+        $folderToCompress = basename(realpath($source));
+
         // Tar folders
         $command = sprintf('cd %s && tar --exclude="%s/sites/*/files" --dereference -cf %s %s', $docroot, $folderToCompress, $destination, $folderToCompress);
         $this->runCommand($command);
