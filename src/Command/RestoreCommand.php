@@ -13,7 +13,7 @@ class RestoreCommand extends AbstractCommand
             ->setDescription('Restores an archive of a previously dumped drupal website.')
             ->addArgument('source', InputArgument::REQUIRED, "Path to your drupal website archive (the .tar or .gz)\tex: /tmp/backup.tar.gz")
             ->addArgument('destination', InputArgument::REQUIRED, "Where the extracted drupal website should end up\t\tex: /var/www/html")
-            ->addOption('use-drush', null, InputOption::VALUE_OPTIONAL, 'Whether you want to use drush or not', "true")
+            ->addOption('use-drush', null, InputOption::VALUE_OPTIONAL, 'Whether you want to use drush or not', "false")
             ->addOption('overwrite', null, InputOption::VALUE_OPTIONAL, 'Overwrite the destination?', "false")
             ->addOption('db-url', null, InputOption::VALUE_REQUIRED, 'Database credentials for the import (format: mysql://user:password@localhost/db_name)', null)
         ;

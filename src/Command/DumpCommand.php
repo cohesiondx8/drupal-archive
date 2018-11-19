@@ -13,8 +13,8 @@ class DumpCommand extends AbstractCommand
             ->setDescription('Creates an archive (tar\'ed and gzip\'ed) of your drupal website.')
             ->addArgument('source', InputArgument::REQUIRED, 'Path to your drupal root folder. ex: /var/www/html')
             ->addArgument('destination', InputArgument::REQUIRED, 'Where the archive should end up. ex: /tmp/backup.tar.gz')
-            ->addOption('overwrite', null, InputOption::VALUE_OPTIONAL, 'Overwrite the archive?', "true")
-            ->addOption('use-drush', null, InputOption::VALUE_OPTIONAL, 'Whether you want to use drush or not', "true")
+            ->addOption('overwrite', null, InputOption::VALUE_OPTIONAL, 'Overwrite the archive?', "false")
+            ->addOption('use-drush', null, InputOption::VALUE_OPTIONAL, 'Whether you want to use drush or not', "false")
         ;
     }
 

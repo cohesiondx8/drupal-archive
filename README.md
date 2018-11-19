@@ -2,7 +2,7 @@
 
 Since drush 9.x does not support `drush archive-dump` and `drush archive-restore`, we decided to create this little tool which does pretty much the same thing in a more primitive way.
 
-There are 2 commands: `drupal-archive cda:dump && drupal-archive cda:restore` with have optional parameters `--use-drush` in case you have drush <= 8.1.17 and you want to use the native drush commands.
+There are 2 commands: `drupal-archive cda:dump && drupal-archive cda:restore` with optional parameters `--use-drush` in case you have drush <= 8.1.17 and you want to use the native drush commands.
 
 ## Installing
 
@@ -30,7 +30,7 @@ drupal-client cda:dump <source> <destination> [--overwrite] [--use-drush]
 Example:
 
 ```
-drupal-client cda:dump /var/www/html/web /tmp/backup.tar --overwrite --use-drush=false -vvv
+drupal-client cda:dump /var/www/html/web /tmp/backup.tar --overwrite --use-drush -vvv
 ```
 
 ### Restoring a drupal website
@@ -48,5 +48,5 @@ drupal-client cda:restore <source> <destination> [--db-url=mysql_url] [--overwri
 Example:
 
 ```
-drupal-client cda:restore /tmp/backup.tar /var/www/html/web-new --overwrite --use-drush=false -vvv
+drupal-client cda:restore /tmp/backup.tar /var/www/html/web-new --db-url=mysql://username:password@localhost:3306/drupal --overwrite -vvv
 ```
