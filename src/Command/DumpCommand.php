@@ -23,19 +23,14 @@ class DumpCommand extends AbstractCommand
         $this->output   = $output;
         $source         = $input->getArgument('source');
         $destination    = $input->getArgument('destination');
-        $overwrite      = false;
-        $useDrush       = false;
+        $overwrite      = $input->getOption('overwrite');
+        $useDrush       = $input->getOption('use-drush');
         $finalName      = basename($destination);
         $destFolder     = realpath(dirname($destination));
         $destination    = ('/' === substr($destFolder, -1) ? $destFolder : $destFolder.'/').$finalName;
 
-        if (in_array($input->getOption('overwrite'), ['y', '1', 'true', 'yes'])) {
-            $overwrite = true;
-        }
-
-        if (in_array($input->getOption('use-drush'), ['y', '1', 'true', 'yes'])) {
-            $useDrush = true;
-        }
+        $overwrite      = (null === $overwrite || in_array($overwrite, ['y', '1', 'true', 'yes']));
+        $useDrush       = (null === $useDrush || in_array($useDrush, ['y', '1', 'true', 'yes']));
 
         // Check if file already exists and we don't want to overwrite it
         if (false === $overwrite && file_exists($destination)) {
@@ -50,12 +45,11 @@ class DumpCommand extends AbstractCommand
             }
 
             $command = sprintf('cd %s && drush archive-dump --destination=%s ', $source, $destination);
-            if ($overwrite) {
-                $command .= '--overwrite';
-            } else {
-                $command .= '--no-overwrite';
-            }
+            $command .= $overwrite ? '--overwrite' : '--no-overwrite';
 
+            if ($this->output->isVerbose()) {
+                $command .= ' -vvv';
+            }
             $this->runCommand($command);
             return $this->output->writeln(sprintf("<info>Your backup is finished! %s</info>", $destination));
         }
@@ -66,6 +60,18 @@ class DumpCommand extends AbstractCommand
             return $this->output->writeln("<error>Could not find database credentials in your sites/default/settings.php!</error>");
         }
 
+        $docroot = realpath($source.'/..');
+        $folderToCompress = basename(realpath($source));
+
+        // Remove destination if we are overwritting and it exists
+        if (file_exists($destination)) {
+            @unlink($destination);
+        }
+
+        // Tar folders
+        $command = sprintf('cd %s && tar --dereference -cf %s %s', $docroot, $destination, $folderToCompress);
+        $this->runCommand($command);
+
         $database = $databases['default']['default'];
 
         // Create database dump
@@ -74,8 +80,9 @@ class DumpCommand extends AbstractCommand
         if (!empty($database['port'])) {
             $port = sprintf('--port=%s', $database['port']);
         }
+        // @see https://dev.mysql.com/doc/mysql-backup-excerpt/5.7/en/mysqldump-sql-format.html
         $command = sprintf(
-            'mysqldump --user=%s --password=%s --host=%s %s --databases %s > /tmp/%s',
+            'mysqldump --user=%s --password=%s --host=%s %s %s > /tmp/%s',
             $database['username'],
             $database['password'],
             $database['host'],
@@ -83,13 +90,6 @@ class DumpCommand extends AbstractCommand
             $database['database'],
             $sqlDump
         );
-        $this->runCommand($command);
-
-        $docroot = realpath($source.'/..');
-        $folderToCompress = basename(realpath($source));
-
-        // Tar folders
-        $command = sprintf('cd %s && tar --exclude="%s/sites/*/files" --dereference -cf %s %s', $docroot, $folderToCompress, $destination, $folderToCompress);
         $this->runCommand($command);
 
         // Add sql

@@ -14,6 +14,7 @@ class RestoreCommand extends AbstractCommand
             ->addArgument('source', InputArgument::REQUIRED, "Path to your drupal website archive (the .tar or .gz)\tex: /tmp/backup.tar.gz")
             ->addArgument('destination', InputArgument::REQUIRED, "Where the extracted drupal website should end up\t\tex: /var/www/html")
             ->addOption('use-drush', null, InputOption::VALUE_OPTIONAL, 'Whether you want to use drush or not', "true")
+            ->addOption('overwrite', null, InputOption::VALUE_OPTIONAL, 'Overwrite the destination?', "false")
             ->addOption('db-url', null, InputOption::VALUE_REQUIRED, 'Database credentials for the import (format: mysql://user:password@localhost/db_name)', null)
         ;
     }
@@ -23,15 +24,16 @@ class RestoreCommand extends AbstractCommand
         $this->output   = $output;
         $source         = $input->getArgument('source');
         $destination    = $input->getArgument('destination');
-        $useDrush       = false;
+        $useDrush       = $input->getOption('use-drush');
+        $overwrite      = $input->getOption('overwrite');
+        $overwrite      = (null === $overwrite || in_array($overwrite, ['y', '1', 'true', 'yes']));
+        $useDrush       = (null === $useDrush || in_array($useDrush, ['y', '1', 'true', 'yes']));
         $databasePath   = $input->getOption('db-url');
 
-        if (empty($databasePath)) {
-            return $this->output->writeln("<error>The parameter db-url is required! Ex: --db-url=mysql://user:password@localhost/db_name</error>");
+        if (empty($databasePath) || !($databaseUrl = parse_url($databasePath))) {
+            return $this->output->writeln("<error>The parameter db-url is required or incorrect! Ex: --db-url=mysql://user:password@localhost/db_name</error>");
         }
 
-        // Make sure we have a good looking db-url
-        $databaseUrl = parse_url($databasePath);
         // Fill in defaults to prevent notices.
         $databaseUrl += array('scheme' => NULL, 'user' => NULL, 'pass' => NULL, 'host' => NULL, 'port' => NULL, 'path' => NULL);
         $databaseUrl = (object) array_map('urldecode', $databaseUrl);
@@ -58,18 +60,15 @@ class RestoreCommand extends AbstractCommand
             return;
         }
 
-        // Do we want to use drush?
-        if (in_array($input->getOption('use-drush'), ['y', '1', 'true', 'yes'])) {
-            $useDrush = true;
-        }
-
         if ($useDrush) {
             // Make sure we are running an old version of drush
             if (!$this->checkRunnableDrush()) {
                 return;
             }
 
-            $command = sprintf('drush archive-restore %s --destination=%s --db-url=%s', $source, $destination, $databasePath);
+            $command = sprintf('drush archive-restore %s --destination=%s --db-url=%s ', $source, $destination, $databasePath);
+            $command .= $overwrite ? '--overwrite' : '--no-overwrite';
+
             if ($this->output->isVerbose()) {
                 $command .= ' -vvv';
             }
@@ -77,8 +76,12 @@ class RestoreCommand extends AbstractCommand
             return $this->output->writeln(sprintf("<info>Your backup has been restored in %s !</info>", $destination));
         }
 
-        if (file_exists($destination)) {
-            return $this->output->writeln(sprintf("<error>The destination folder %s already exists!</error>", $destination));
+        if (is_dir($destination)) {
+            if (!$overwrite) {
+                return $this->output->writeln(sprintf("<error>The destination folder %s already exists! Maybe use --overwrite ?</error>", $destination));
+            }
+            // Chmod so we can delete all files
+            $this->runCommand(sprintf('chmod -R 0777 %s && rm -rf %s', $destination, $destination));
         }
 
         // Create a temporary folder where we'll work
