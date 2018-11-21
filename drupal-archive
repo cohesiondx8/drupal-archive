@@ -17,7 +17,7 @@ require_once $autoload;
 use Symfony\Component\Console\Application;
 use CohesionDrupalArchive\Command\{DumpCommand, RestoreCommand};
 
-$application = new Application('CohesionDX Drupal-Archive Helper');
+$application = new Application('CohesionDX Drupal-Archive', '1.0.0');
 
 $application->add(new DumpCommand());
 $application->add(new RestoreCommand());
