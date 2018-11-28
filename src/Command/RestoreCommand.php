@@ -103,7 +103,7 @@ class RestoreCommand extends AbstractCommand
             $this->runCommand(sprintf('mkdir -p %s && cp -rT -u %s %s', $destination, $extractedFolder, $destination));
         } catch (\Exception $exc) {
             // The above command can fail if the when duplicate files with different case exist...
-            $this->output->writeln(sprintf("<comment>%s</comment>", $exc->getMessage()));
+            $this->output->writeln(sprintf("<comment>An error occured but the script did not interrupt.\n%s</comment>", $exc->getMessage()));
         }
 
         // Find the sql dump
@@ -119,7 +119,7 @@ class RestoreCommand extends AbstractCommand
             ));
         } catch (\Exception $exc) {
             // The above command will fail if the database already exists and that's fine.
-            $this->output->writeln(sprintf("<comment>%s</comment>", $exc->getMessage()));
+            $this->output->writeln(sprintf("<comment>An error occured but the script did not interrupt.\n%s</comment>", $exc->getMessage()));
         }
 
         // Restore Database - 2. Load the dump
@@ -147,5 +147,7 @@ class RestoreCommand extends AbstractCommand
 
         // Clean up our mess in /tmp
         $this->runCommand(sprintf('cd /tmp && chmod -R 0777 %s && rm -rf %s', TMP_DRUPAL_FOLDER, TMP_DRUPAL_FOLDER));
+
+        return $this->output->writeln(sprintf("<info>The restoration is finished: %s</info>", $destination));
     }
 }
