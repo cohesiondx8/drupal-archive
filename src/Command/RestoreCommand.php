@@ -99,7 +99,12 @@ class RestoreCommand extends AbstractCommand
         $extractedFolder = $this->runCommand(sprintf('find %s/* -maxdepth 0 -type d', TMP_DRUPAL_FOLDER));
 
         // Move folder to destination
-        $this->runCommand(sprintf('mkdir -p %s && cp -rT %s %s', $destination, $extractedFolder, $destination));
+        try {
+            $this->runCommand(sprintf('mkdir -p %s && cp -rT -u %s %s', $destination, $extractedFolder, $destination));
+        } catch (\Exception $exc) {
+            // The above command can fail if the when duplicate files with different case exist...
+            $this->output->writeln(sprintf("<comment>%s</comment>", $exc->getMessage()));
+        }
 
         // Find the sql dump
         $extractedSql = $this->runCommand(sprintf('find %s/* -maxdepth 0 -type f -name \'*.sql\'', TMP_DRUPAL_FOLDER));
