@@ -54,8 +54,15 @@ class DumpCommand extends AbstractCommand
             return $this->output->writeln(sprintf("<info>Your backup is finished! %s</info>", $destination));
         }
 
+        $phpSettingsFile = $source.'/sites/default/settings.php';
+        if (!file_exists($phpSettingsFile)) {
+            $phpSettingsFile = $source.'/docroot/sites/default/settings.php';
+            if (!file_exists($phpSettingsFile)) {
+                return $this->output->writeln("<error>Could not find your sites/default/settings.php!</error>");
+            }
+        }
         // Dodgy! But this way I can access database credentials without using drush sql command
-        @require_once($source.'/sites/default/settings.php');
+        require_once($phpSettingsFile);
         if (!isset($databases, $databases['default'], $databases['default']['default'])) {
             return $this->output->writeln("<error>Could not find database credentials in your sites/default/settings.php!</error>");
         }
