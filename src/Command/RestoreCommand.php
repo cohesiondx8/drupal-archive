@@ -132,9 +132,15 @@ class RestoreCommand extends AbstractCommand
         ));
 
         // Make sure settings.php exists
-        $settingsFile = $this->runCommand(sprintf('find %s/sites -type f -name settings.php', $destination));
+        $settingsFile = $this->runCommand(sprintf('cd %s && find ./ -maxdepth 4 -not -path "*/vendor/*" -type f -name settings.php', $destination));
+        $settingsFile = $destination.'/'.$settingsFile;
         if (!file_exists($settingsFile)) {
-            $folder = dirname($settingsFile);
+            $defaultSettingsFile = $this->runCommand(sprintf('cd %s && find ./ -maxdepth 4 -not -path "*/vendor/*" -type f -name default.settings.php', $destination));
+            $defaultSettingsFile = $destination.'/'.$defaultSettingsFile;
+            if (!file_exists($defaultSettingsFile)) {
+                return $this->output->writeln("<error>The file settings.php and default.settings.php are missing from the archive!</error>");
+            }
+            $folder = dirname($defaultSettingsFile);
             $this->runCommand(sprintf('cp %s/default.settings.php %s/settings.php', $folder, $folder));
         }
 
