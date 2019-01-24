@@ -13,7 +13,7 @@ class AbstractCommand extends Command
      * Run process on the server and return whatever the command is supposed to return
      * @example echo $this->runCommand('drush --version');
      */
-    protected function runCommand(string $command, $timeout = 600)
+    protected function runCommand(string $command, $timeout = null)
     {
         $output = $this->output;
         $output->writeln(sprintf('<comment>Running command "%s"</comment>', $command), $output::VERBOSITY_VERBOSE);
