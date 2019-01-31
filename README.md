@@ -11,7 +11,7 @@ You will need composer installed with php >= 7.1 and `mysql` client tools (mysql
 It is best to install the package globally with composer:
 
 ```
-composer global update cohesiondx8/drupal-archive
+composer global require cohesiondx8/drupal-archive
 ```
 
 ## Usage
