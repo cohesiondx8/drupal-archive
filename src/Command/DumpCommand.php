@@ -75,6 +75,8 @@ class DumpCommand extends AbstractCommand
             @unlink($destination);
         }
 
+        $tmpFolder = sys_get_temp_dir();
+
         // Tar folders
         $command = sprintf('cd %s && tar --dereference -cf %s %s', $docroot, $destination, $folderToCompress);
         $this->runCommand($command);
@@ -89,18 +91,18 @@ class DumpCommand extends AbstractCommand
         }
         // @see https://dev.mysql.com/doc/mysql-backup-excerpt/5.7/en/mysqldump-sql-format.html
         $command = sprintf(
-            'mysqldump --user=%s --password=%s --host=%s %s %s > /tmp/%s',
+            'mysqldump --user=%s --password=%s --host=%s %s %s > %s',
             $database['username'],
             $database['password'],
             $database['host'],
             $port,
             $database['database'],
-            $sqlDump
+            $tmpFolder.'/'.$sqlDump
         );
         $this->runCommand($command);
 
         // Add sql
-        $command = sprintf('cd /tmp && tar --dereference -rf %s %s', $destination, $sqlDump);
+        $command = sprintf('cd %s && tar --dereference -rf %s %s', $tmpFolder, $destination, $sqlDump);
         $this->runCommand($command);
 
         // GZIP
@@ -110,6 +112,9 @@ class DumpCommand extends AbstractCommand
         // Rename gzip to destination
         $command = sprintf('cd %s && mv %s.gz %s', $destFolder, $finalName, $finalName);
         $this->runCommand($command);
+
+        // Delete the sqlDump file
+        @unlink($tmpFolder.'/'.$sqlDump);
 
         return $this->output->writeln(sprintf("<info>Your backup is finished! %s</info>", $destination));
     }
